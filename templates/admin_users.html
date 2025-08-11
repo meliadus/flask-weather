@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-4">{{ 'Пользователи' if lang == 'ru' else 'Users' }}</h1>
+
+<table class="table table-dark table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>{{ 'Логин' if lang == 'ru' else 'Username' }}</th>
+            <th>{{ 'Роль' if lang == 'ru' else 'Role' }}</th>
+            <th>{{ 'Хэш пароля' if lang == 'ru' else 'Password hash' }}</th>
+            <th>{{ 'Действия' if lang == 'ru' else 'Actions' }}</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for user in users %}
+        <tr>
+            <td>{{ user[0] }}</td>
+            <td>{{ user[1] }}</td>
+            <td>{{ user[2] }}</td>
+            <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis;">{{ user[3] }}</td>
+            <td>
+                {% if user[1] != 's@sfoods.org' %}
+                    <a href="{{ url_for('delete_user', user_id=user[0]) }}" class="btn btn-sm btn-danger"
+                       onclick="return confirm('{{ 'Удалить пользователя?' if lang == 'ru' else 'Delete user?' }}');">
+                       {{ 'Удалить' if lang == 'ru' else 'Delete' }}
+                    </a>
+                    <a href="{{ url_for('reset_password', user_id=user[0]) }}" class="btn btn-sm btn-warning"
+                       onclick="return confirm('{{ 'Сбросить пароль?' if lang == 'ru' else 'Reset password?' }}');">
+                       {{ 'Сбросить пароль' if lang == 'ru' else 'Reset password' }}
+                    </a>
+                {% else %}
+                    <span class="text-muted">{{ 'Нельзя удалить' if lang == 'ru' else 'Cannot delete' }}</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

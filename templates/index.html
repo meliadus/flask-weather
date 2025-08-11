@@ -1,16 +1,88 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Температура воды</title>
-<style>
-body { font-family: Arial, sans-serif; text-align: center; }
-.temp { font-size: 3em; color: #0066cc; }
-</style>
-</head>
-<body>
-    <h1>Температура воды</h1>
-    <p class="temp">{{ temp_water }} °C</p>
-    <p>Координаты: {{ lat }}, {{ lon }}</p>
-</body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Раздел "О проекте" -->
+<section class="mb-5 p-4 bg-dark bg-opacity-75 rounded shadow">
+    <h2 class="text-center mb-3">{{ 'О проекте' if lang == 'ru' else 'About the Project' }}</h2>
+    <p class="lead text-center">
+        {% if lang == 'ru' %}
+            Добро пожаловать на сайт <strong>Территория умных решений</strong> —
+            пространство для идей, технологий и автоматизации. Мы создаём системы
+            «умного дома» и интеграционные решения, которые упрощают повседневную жизнь,
+            помогают экономить ресурсы и делают ваш дом действительно удобным и современным.
+        {% else %}
+            Welcome to <strong>Territory of Smart Solutions</strong> —
+            a space for ideas, technology, and automation. We create smart home
+            and integration systems that simplify everyday life, help save resources,
+            and make your home truly comfortable and modern.
+        {% endif %}
+    </p>
+    <p class="text-center">
+        {% if lang == 'ru' %}
+            Здесь вы найдёте статьи, примеры проектов и инструкции, а также сможете
+            связаться с нами для реализации ваших идей.
+        {% else %}
+            Here you will find articles, project examples, and guides, and you can
+            contact us to bring your ideas to life.
+        {% endif %}
+    </p>
+</section>
+
+<!-- Раздел "Статьи" -->
+<h2 class="text-center mb-4">{{ 'Статьи' if lang == 'ru' else 'Articles' }}</h2>
+<div class="row">
+
+  {% if posts|length == 1 %}
+    {% set post = posts[0] %}
+    <div class="col-12 mb-4">
+      {% include 'post_card.html' %}
+    </div>
+
+  {% elif posts|length == 2 %}
+    {% for post in posts %}
+      <div class="col-md-6 mb-4">
+        {% include 'post_card.html' %}
+      </div>
+    {% endfor %}
+
+  {% elif posts|length == 3 %}
+    {% for post in posts %}
+      <div class="col-md-4 mb-4">
+        {% include 'post_card.html' %}
+      </div>
+    {% endfor %}
+
+  {% elif posts|length == 4 %}
+    {% set post = posts[0] %}
+    <div class="col-12 mb-4">
+      {% include 'post_card.html' %}
+    </div>
+    {% for post in posts[1:] %}
+      <div class="col-md-4 mb-4">
+        {% include 'post_card.html' %}
+      </div>
+    {% endfor %}
+
+  {% elif posts|length == 5 %}
+    {% for post in posts[0:2] %}
+      <div class="col-md-6 mb-4">
+        {% include 'post_card.html' %}
+      </div>
+    {% endfor %}
+    {% for post in posts[2:] %}
+      <div class="col-md-4 mb-4">
+        {% include 'post_card.html' %}
+      </div>
+    {% endfor %}
+
+  {% else %}
+    {% for post in posts %}
+      <div class="col-md-4 mb-4">
+        {% include 'post_card.html' %}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+</div>
+
+{% endblock %}

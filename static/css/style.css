@@ -1,0 +1,47 @@
+body {
+    background: url('../img/backg2.jpg') no-repeat center center fixed;
+    background-size: cover;
+}
+
+.card img {
+    height: 200px;
+    object-fit: cover;
+}
+
+.card {
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.back-btn {
+  opacity: 0.6; /* полупрозрачность */
+  transition: opacity 0.3s ease;
+}
+
+.back-btn:hover {
+  opacity: 1; /* при наведении становится полностью видимой */
+}
+
+/* Плавающая кнопка назад */
+.back-btn-floating {
+  position: fixed;
+  top: 90px; /* ниже шапки */
+  left: 20px;
+  z-index: 10000;
+  opacity: 0.5;
+  transition: opacity 0.3s ease, transform 0.2s ease;
+}
+
+.back-btn-floating:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+.cart-badge {
+    position: absolute;
+    top: 0px;
+    right: -8px;
+    background: red;
+    color: white;
+    font-size: 12px;
+    padding: 2px 5px;
+    border-radius: 50%;
+}

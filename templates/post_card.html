@@ -1,0 +1,12 @@
+<div class="card bg-dark text-light h-100 shadow">
+    <img src="{{ post.image }}" class="card-img-top" alt="image">
+    <div class="card-body">
+        <h5 class="card-title">{{ post['title_' + lang] }}</h5>
+        <p class="card-text">{{ post['preview_' + lang] }}</p>
+        <a href="/{{ 'ru/post/' if lang=='ru' else 'post/' }}{{ post.id }}"
+           target="_blank"
+           class="btn btn-primary">
+            {{ tr.read_more }}
+        </a>
+    </div>
+</div>

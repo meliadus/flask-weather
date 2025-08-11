@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-center">{{ tr.menu_login }}</h1>
+<form class="mt-4" method="post">
+  <div class="mb-3">
+    <label for="username" class="form-label">{{ tr.login_username }}</label>
+    <input type="text" class="form-control" id="username" name="username" placeholder="{{ tr.login_username_placeholder }}" required>
+  </div>
+  <div class="mb-3">
+    <label for="password" class="form-label">{{ tr.login_password }}</label>
+    <input type="password" class="form-control" id="password" name="password" placeholder="{{ tr.login_password_placeholder }}" required>
+  </div>
+  <button type="submit" class="btn btn-primary">{{ tr.login_button }}</button>
+</form>
+
+<!-- Кнопка регистрации -->
+<div class="text-center mt-3">
+    <p>{{ tr.no_account }}</p>
+    <a href="/{{ 'ru/register' if lang == 'ru' else 'register' }}" class="btn btn-outline-light">
+        {{ tr.register_button }}
+    </a>
+</div>
+{% endblock %}

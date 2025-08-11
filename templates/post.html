@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<h1 class="mb-4">
+  {{ post['title_' + lang] }}
+</h1>
+
+<!-- Превью фото сверху -->
+{% if post.image %}
+<img src="{{ post.image }}" class="img-fluid mb-4" alt="Preview image">
+{% endif %}
+
+<!-- Текст статьи -->
+<p>
+  {% if lang == 'en' %}
+    {{ post.get('full_en', 'Full text of the article is not yet added.') }}
+  {% else %}
+    {{ post.get('full_ru', 'Полный текст статьи пока не добавлен.') }}
+  {% endif %}
+</p>
+
+{% if post.gallery %}
+<h3 class="mt-5">{{ 'Gallery' if lang == 'en' else 'Галерея' }}</h3>
+<div class="row">
+  {% for img in post.gallery %}
+    <div class="col-md-4 mb-3">
+      <img src="{{ img }}" class="img-fluid rounded shadow gallery-img" alt="Gallery image"
+           onclick="openImageModal('{{ img }}')">
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Модальное окно -->
+<div id="imageModal" class="image-modal" onclick="closeImageModal()">
+  <span class="close">&times;</span>
+  <img class="modal-content" id="modalImage">
+</div>
+
+<style>
+/* Модалка */
+.image-modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  padding-top: 50px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.9);
+}
+
+/* Картинка в модалке */
+.image-modal .modal-content {
+  display: block;
+  margin: auto;
+  max-width: 90%;
+  max-height: 80%;
+  border-radius: 5px;
+}
+
+/* Кнопка закрытия */
+.image-modal .close {
+  position: absolute;
+  top: 15px;
+  right: 35px;
+  color: white;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.image-modal .close:hover {
+  color: #ccc;
+}
+
+/* Эффект курсора при наведении */
+.gallery-img {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.gallery-img:hover {
+  transform: scale(1.05);
+}
+</style>
+
+<script>
+function openImageModal(src) {
+  document.getElementById("imageModal").style.display = "block";
+  document.getElementById("modalImage").src = src;
+}
+
+function closeImageModal() {
+  document.getElementById("imageModal").style.display = "none";
+}
+</script>
+<!-- Кнопка назад -->
+<a href="/{{ 'ru' if lang == 'ru' else '' }}"
+   class="btn btn-outline-light back-btn mt-4">
+  ⬅ {{ tr.menu_home }}
+</a>
+
+
+
+{% endblock %}

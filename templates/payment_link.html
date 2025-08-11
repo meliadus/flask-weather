@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-center mb-4">
+  {{ 'Payment' if lang=='en' else 'Оплата' }} — {{ method }}
+</h1>
+
+<div class="card bg-dark text-light p-3">
+  <p class="mb-1"><strong>{{ 'Amount' if lang=='en' else 'Сумма' }}:</strong> {{ total }} {{ 'NOK' }}</p>
+  <p class="mb-1"><strong>{{ 'Reference' if lang=='en' else 'Назначение платежа' }}:</strong> {{ reference }}</p>
+
+  {% if method == 'Vipps' %}
+    <hr>
+    <p class="mb-2">
+      {{ 'Open Vipps and send a payment to' if lang=='en' else 'Откройте Vipps и отправьте платеж на' }}
+      <strong>{{ vipps_phone }}</strong>
+      {{ 'with the exact amount and reference above.' if lang=='en' else 'на указанную сумму с примечанием (reference) выше.' }}
+    </p>
+  {% endif %}
+
+  {% if external_url %}
+    <a href="{{ external_url }}" class="btn btn-primary me-2" target="_blank" rel="noopener">
+      {{ 'Open' if lang=='en' else 'Открыть' }} {{ method }}
+    </a>
+  {% else %}
+    {% if method != 'Vipps' %}
+      <div class="alert alert-warning mt-2">
+        {{ 'Payment link is not configured. Ask site owner.' if lang=='en' else 'Платёжная ссылка не настроена. Свяжитесь с владельцем сайта.' }}
+      </div>
+    {% endif %}
+  {% endif %}
+
+  <a href="/{{ 'ru/account' if lang=='ru' else 'account' }}" class="btn btn-outline-light mt-2">
+    {{ 'I paid — back to account' if lang=='en' else 'Я оплатил — вернуться в аккаунт' }}
+  </a>
+  <p class="mt-3 text-muted">
+    {{ 'Your order will be marked as paid by the administrator after verification.' if lang=='en'
+       else 'После проверки администратор отметит заказ как оплаченный.' }}
+  </p>
+</div>
+{% endblock %}

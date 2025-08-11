@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-center">{{ tr.menu_contacts }}</h1>
+
+<div id="form-messages" style="display:none;" class="alert mt-3"></div>
+
+<form id="contact-form" class="mt-4">
+  <div class="mb-3">
+    <label for="name" class="form-label">{{ tr.contacts_name }}</label>
+    <input type="text" class="form-control" id="name" name="name" placeholder="{{ tr.contacts_name_placeholder }}" required>
+  </div>
+  <div class="mb-3">
+    <label for="email" class="form-label">{{ tr.contacts_email }}</label>
+    <input type="email" class="form-control" id="email" name="_replyto" placeholder="{{ tr.contacts_email_placeholder }}" required>
+  </div>
+  <div class="mb-3">
+    <label for="message" class="form-label">{{ tr.contacts_message }}</label>
+    <textarea class="form-control" id="message" name="message" rows="3" placeholder="{{ tr.contacts_message_placeholder }}" required></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">{{ tr.contacts_button }}</button>
+</form>
+
+<script>
+document.getElementById("contact-form").addEventListener("submit", function(e) {
+    e.preventDefault(); // Не даём форме перезагрузить страницу
+
+    let form = e.target;
+    let data = new FormData(form);
+
+    fetch("https://formspree.io/f/xrblayrz", {
+        method: "POST",
+        body: data,
+        headers: { 'Accept': 'application/json' }
+    }).then(response => {
+        let msgBox = document.getElementById("form-messages");
+        msgBox.style.display = "block";
+        msgBox.className = "alert alert-success";
+        msgBox.textContent = "{{ 'Сообщение отправлено!' if lang == 'ru' else 'Message sent successfully!' }}";
+        form.reset();
+    }).catch(error => {
+        let msgBox = document.getElementById("form-messages");
+        msgBox.style.display = "block";
+        msgBox.className = "alert alert-danger";
+        msgBox.textContent = "{{ 'Ошибка отправки.' if lang == 'ru' else 'Error sending message.' }}";
+    });
+});
+</script>
+{% endblock %}

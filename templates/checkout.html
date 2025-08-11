@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-center mb-4">{{ 'Checkout' if lang=='en' else 'Оформление заказа' }}</h1>
+
+{% if cart_items %}
+<table class="table table-dark table-striped align-middle">
+  <thead>
+    <tr>
+      <th>{{ 'Product' if lang=='en' else 'Товар' }}</th>
+      <th class="text-center">{{ 'Qty' if lang=='en' else 'Кол-во' }}</th>
+      <th class="text-end">{{ 'Price' if lang=='en' else 'Цена' }}</th>
+      <th class="text-end">{{ 'Subtotal' if lang=='en' else 'Сумма' }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in cart_items %}
+    <tr>
+      <td>{{ item['name_' + lang] }}</td>
+      <td class="text-center">{{ item.qty }}</td>
+      <td class="text-end">{{ item.price }} NOK</td>
+      <td class="text-end">{{ item.subtotal }} NOK</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <th colspan="3" class="text-end">{{ 'Total' if lang=='en' else 'Итого' }}</th>
+      <th class="text-end">{{ total }} NOK</th>
+    </tr>
+  </tbody>
+</table>
+
+<h4 class="mt-4">{{ 'Choose payment method:' if lang=='en' else 'Выберите способ оплаты:' }}</h4>
+<div class="d-flex gap-2 mt-2">
+  <a class="btn btn-warning" href="{{ url_for('pay_vipps') }}">Vipps</a>
+  <a class="btn btn-primary" href="{{ url_for('pay_revolut') }}">Revolut</a>
+  <a class="btn btn-light" href="{{ url_for('pay_paypal') }}">PayPal</a>
+</div>
+{% else %}
+<div class="alert alert-info">
+  {{ 'Your cart is empty.' if lang=='en' else 'Ваша корзина пуста.' }}
+</div>
+<a href="/{{ 'ru/shop' if lang=='ru' else 'shop' }}" class="btn btn-outline-light">
+  {{ 'Go to shop' if lang=='en' else 'Перейти в магазин' }}
+</a>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-center mb-4">{{ tr.menu_shop }}</h1>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+    {% for product in products %}
+    <div class="col">
+        <div class="card bg-dark text-light h-100 shadow">
+            <img src="{{ product.image }}" class="card-img-top" alt="{{ product['name_' + lang] }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ product['name_' + lang] }}</h5>
+                <p class="card-text">{{ product['description_' + lang] }}</p>
+                <p class="fw-bold">{{ product.price }} NOK</p>
+                <a href="/add_to_cart/{{ product.id }}" class="btn btn-primary w-100">
+                    {{ 'Add to cart' if lang == 'en' else 'В корзину' }}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<a href="/{{ 'ru/cart' if lang == 'ru' else 'cart' }}" class="btn btn-success mt-4 ">
+    {{ 'Go to cart' if lang == 'en' else 'Перейти в корзину' }}
+</a>
+{% endblock %}
