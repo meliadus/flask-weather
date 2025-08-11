@@ -82,7 +82,8 @@
         <td>
           {% if status_choices %}
             {% for code, labels in status_choices %}
-              {% if code == o.status_code %}
+
+          {% if code == o.status_code %}
                 {{ labels[lang] }}
               {% endif %}
             {% endfor %}
