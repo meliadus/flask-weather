@@ -18,6 +18,7 @@ REVOLUT_USERNAME = "YOUR_REVOLUTME"   # например, om666  → https://rev
 PAYPAL_ME_USERNAME = "YOUR_PAYPALME"  # например, utech  → https://paypal.me/utech
 VIPPS_PHONE = "48643809"              # твой Vipps-телефон
 CURRENCY = "NOK"
+app.config["JSON_AS_ASCII"] = False
 
 
 def init_db():

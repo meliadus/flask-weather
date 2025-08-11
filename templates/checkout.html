@@ -1,225 +1,261 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="mb-4">{{ 'Checkout' if lang=='en' else 'Оформление заказа' }}</h1>
+<h1 class="mb-4">{{ 'Оформление заказа' if lang=='ru' else 'Checkout' }}</h1>
 
 <div class="row g-4">
-  <!-- Адрес доставки -->
-  <div class="col-lg-6">
-    <div class="card bg-dark text-light">
-      <div class="card-body">
-        <h5 class="card-title">{{ 'Shipping address' if lang=='en' else 'Адрес доставки' }}</h5>
 
-        <form id="shipping-form" onsubmit="return false;">
+  <!-- Колонка: адрес/ревью -->
+  <div class="col-lg-7">
+
+    <!-- Шаг 1: форма адреса -->
+    <div id="edit-step" class="card bg-dark text-light shadow">
+      <div class="card-body">
+        <h4 class="mb-3">{{ 'Адрес доставки' if lang=='ru' else 'Shipping address' }}</h4>
+
+        <div id="ship-msg" class="alert alert-info d-none"></div>
+
+        <form id="shipping-form" onsubmit="event.preventDefault(); goToReview();">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label">{{ 'First name' if lang=='en' else 'Имя' }}</label>
-              <input class="form-control" id="first_name" value="{{ shipping.first_name or '' }}">
+              <label class="form-label">{{ 'Имя' if lang=='ru' else 'First name' }}</label>
+              <input class="form-control" name="first_name" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label">{{ 'Last name' if lang=='en' else 'Фамилия' }}</label>
-              <input class="form-control" id="last_name" value="{{ shipping.last_name or '' }}">
+              <label class="form-label">{{ 'Фамилия' if lang=='ru' else 'Last name' }}</label>
+              <input class="form-control" name="last_name" required>
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">{{ 'Country' if lang=='en' else 'Страна' }}</label>
-              <input class="form-control" id="country" value="{{ shipping.country or '' }}">
+              <label class="form-label">{{ 'Страна' if lang=='ru' else 'Country' }}</label>
+              <input class="form-control" name="country" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label">{{ 'ZIP/Postal code' if lang=='en' else 'Почтовый индекс' }}</label>
-              <input class="form-control" id="zip" value="{{ shipping.zip or '' }}">
+              <label class="form-label">{{ 'Индекс' if lang=='ru' else 'Postcode' }}</label>
+              <input class="form-control" name="postcode" required>
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">{{ 'City' if lang=='en' else 'Город' }}</label>
-              <input class="form-control" id="city" value="{{ shipping.city or '' }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">{{ 'Carrier notes' if lang=='en' else 'Примечания для перевозчика' }}</label>
-              <input class="form-control" id="carrier_notes" value="{{ shipping.carrier_notes or '' }}" placeholder="{{ 'Entrance code, doorbell etc.' if lang=='en' else 'Код домофона, подъезд и т.п.' }}">
-            </div>
-
-            <div class="col-12">
-              <label class="form-label">{{ 'Address line 1' if lang=='en' else 'Адрес, строка 1' }}</label>
-              <input class="form-control" id="addr1" value="{{ shipping.addr1 or '' }}">
+              <label class="form-label">{{ 'Город' if lang=='ru' else 'City' }}</label>
+              <input class="form-control" name="city" required>
             </div>
             <div class="col-12">
-              <label class="form-label">{{ 'Address line 2' if lang=='en' else 'Адрес, строка 2' }}</label>
-              <input class="form-control" id="addr2" value="{{ shipping.addr2 or '' }}">
+              <label class="form-label">{{ 'Адрес 1' if lang=='ru' else 'Address line 1' }}</label>
+              <input class="form-control" name="address1" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ 'Адрес 2 (необязательно)' if lang=='ru' else 'Address line 2 (optional)' }}</label>
+              <input class="form-control" name="address2">
             </div>
 
             <div class="col-md-6">
               <label class="form-label">Email</label>
-              <input type="email" class="form-control" id="email" value="{{ shipping.email or '' }}">
+              <input type="email" class="form-control" name="email" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label">{{ 'Phone' if lang=='en' else 'Телефон' }}</label>
-              <input class="form-control" id="phone" value="{{ shipping.phone or '' }}">
+              <label class="form-label">{{ 'Телефон' if lang=='ru' else 'Phone' }}</label>
+              <input class="form-control" name="phone" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Перевозчик (необязательно)' if lang=='ru' else 'Carrier (optional)' }}</label>
+              <input class="form-control" name="carrier">
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ 'Примечания к доставке' if lang=='ru' else 'Delivery notes' }}</label>
+              <textarea class="form-control" name="notes" rows="2"></textarea>
             </div>
           </div>
-        </form>
 
-        <div id="ship-msg" class="alert mt-3 d-none"></div>
+          <div class="d-flex gap-2 mt-4">
+            <button class="btn btn-outline-secondary" type="button" onclick="saveShipping(true)">
+              {{ 'Сохранить адрес' if lang=='ru' else 'Save address' }}
+            </button>
+            <button class="btn btn-primary" type="submit">
+              {{ 'Просмотр и оплата' if lang=='ru' else 'Review & Pay' }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
+
+    <!-- Шаг 2: сводка + оплата -->
+    <div id="review-step" class="card bg-dark text-light shadow d-none">
+      <div class="card-body">
+        <h4 class="mb-3">{{ 'Проверьте адрес' if lang=='ru' else 'Review your address' }}</h4>
+
+        <div class="p-3 rounded border border-secondary mb-3 bg-opacity-50">
+          <div id="review-address" style="white-space: pre-line;"></div>
+        </div>
+
+        <div class="d-flex gap-2 mb-4">
+          <button class="btn btn-outline-light" onclick="backToEdit()">
+            {{ 'Изменить адрес' if lang=='ru' else 'Edit address' }}
+          </button>
+        </div>
+
+        <h5 class="mb-3">{{ 'Выберите способ оплаты' if lang=='ru' else 'Choose payment method' }}</h5>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-warning" onclick="proceedPayment('vipps')">Vipps</button>
+          <button class="btn btn-primary" onclick="proceedPayment('revolut')">Revolut</button>
+          <button class="btn btn-light"   onclick="proceedPayment('paypal')">PayPal</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Резюме заказа -->
-  <div class="col-lg-6">
-    <div class="card bg-dark text-light">
+  <!-- Колонка: корзина -->
+  <div class="col-lg-5">
+    <div class="card bg-dark text-light shadow">
       <div class="card-body">
-        <h5 class="card-title">{{ 'Order summary' if lang=='en' else 'Состав заказа' }}</h5>
+        <h4 class="mb-3">{{ 'Ваш заказ' if lang=='ru' else 'Your order' }}</h4>
 
         {% if cart_items %}
           <ul class="list-group list-group-flush">
             {% for it in cart_items %}
-              <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
-                <span>
-                  {{ it['name_' + lang] if it.get('name_' + lang) else it.get('name', '') }}
-                  × {{ it.qty }}
-                </span>
-                <span>{{ it.subtotal }} NOK</span>
+              <li class="list-group-item bg-dark text-light d-flex justify-content-between">
+                <div>
+                  {{ (it['name_ru'] if lang=='ru' else it['name_en']) or it['name'] }} × {{ it.qty }}
+                </div>
+                <div>{{ it.subtotal }} NOK</div>
               </li>
             {% endfor %}
-            <li class="list-group-item bg-dark text-light d-flex justify-content-between">
-              <strong>{{ 'Total' if lang=='en' else 'Итого' }}</strong>
-              <strong id="order-total">{{ total }} NOK</strong>
+            <li class="list-group-item bg-dark text-light d-flex justify-content-between fw-bold">
+              <span>{{ 'Итого' if lang=='ru' else 'Total' }}</span>
+              <span>{{ total }} NOK</span>
             </li>
           </ul>
         {% else %}
-          <p class="mt-2">{{ 'Your cart is empty' if lang=='en' else 'Ваша корзина пуста' }}</p>
+          <p class="text-muted">{{ 'Корзина пуста' if lang=='ru' else 'Your cart is empty' }}</p>
         {% endif %}
-
-        <!-- Кнопки оплаты -->
-        <div class="mt-4 d-flex flex-wrap gap-2">
-          <button class="btn btn-warning" onclick="proceedPayment('vipps')">Vipps</button>
-          <button class="btn btn-primary" onclick="proceedPayment('revolut')">Revolut</button>
-          <button class="btn btn-light" onclick="proceedPayment('paypal')">PayPal</button>
-        </div>
-
-        <div id="pay-msg" class="alert mt-3 d-none"></div>
       </div>
     </div>
   </div>
+
 </div>
 
 <script>
-const FS_ENDPOINT = "https://formspree.io/f/xrblayrz"; // твой Formspree
+const lang = "{{ lang }}";
+const saveUrl = "{{ url_for('save_shipping') }}";
+const payUrls = {
+  vipps: "{{ url_for('pay_vipps') }}",
+  revolut: "{{ url_for('pay_revolut') }}",
+  paypal: "{{ url_for('pay_paypal') }}"
+};
 
 function collectShipping() {
-  return {
-    first_name: document.getElementById('first_name').value.trim(),
-    last_name:  document.getElementById('last_name').value.trim(),
-    country:    document.getElementById('country').value.trim(),
-    zip:        document.getElementById('zip').value.trim(),
-    city:       document.getElementById('city').value.trim(),
-    addr1:      document.getElementById('addr1').value.trim(),
-    addr2:      document.getElementById('addr2').value.trim(),
-    email:      document.getElementById('email').value.trim(),
-    phone:      document.getElementById('phone').value.trim(),
-    carrier_notes: document.getElementById('carrier_notes').value.trim()
+  const f = document.getElementById('shipping-form');
+  const data = {
+    first_name: f.first_name.value.trim(),
+    last_name:  f.last_name.value.trim(),
+    country:    f.country.value.trim(),
+    postcode:   f.postcode.value.trim(),
+    city:       f.city.value.trim(),
+    address1:   f.address1.value.trim(),
+    address2:   f.address2.value.trim(),
+    email:      f.email.value.trim(),
+    phone:      f.phone.value.trim(),
+    carrier:    f.carrier.value.trim(),
+    notes:      f.notes.value.trim(),
   };
+  return data;
 }
 
-// Живое сохранение адреса в сессию (и localStorage на всякий)
-function saveShipping() {
+function fillFormFrom(obj) {
+  const f = document.getElementById('shipping-form');
+  for (const k in obj) { if (f[k]) f[k].value = obj[k] ?? ""; }
+}
+
+function renderReviewBox(data) {
+  const lines = [];
+  lines.push(`${data.first_name} ${data.last_name}`);
+  lines.push(`${data.address1}${data.address2 ? ', ' + data.address2 : ''}`);
+  lines.push(`${data.postcode} ${data.city}`);
+  lines.push(data.country);
+  lines.push(`${'Тел.' if (lang=='ru') else 'Phone'}: ${data.phone}`);
+  lines.push(`Email: ${data.email}`);
+  if (data.carrier) lines.push(`${(lang=='ru'?'Перевозчик':'Carrier')}: ${data.carrier}`);
+  if (data.notes)   lines.push(`${(lang=='ru'?'Примечания':'Notes')}: ${data.notes}`);
+  document.getElementById('review-address').textContent = lines.join('\n');
+}
+
+async function saveShipping(showToast=false) {
+  const box = document.getElementById('ship-msg');
   const data = collectShipping();
-  localStorage.setItem("shipping", JSON.stringify(data));
-  return fetch("{{ url_for('save_shipping') }}", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-}
-
-// Авто-подгрузка из localStorage (на случай возврата на страницу)
-(function restoreShippingFromLocal() {
-  try {
-    const raw = localStorage.getItem("shipping");
-    if (!raw) return;
-    const s = JSON.parse(raw);
-    for (const k in s) {
-      const el = document.getElementById(k);
-      if (el) el.value = s[k];
-    }
-  } catch(e){}
-})();
-
-// Сохранение при изменении любого поля
-document.getElementById('shipping-form')
-  .addEventListener('input', () => saveShipping());
-
-// Отправка письма через Formspree (как в контактах), после чего — редирект на оплату
-async function proceedPayment(method) {
-  // Валидация (минимум обязательных полей)
-  const s = collectShipping();
-  const need = ['first_name','last_name','country','zip','city','addr1','email','phone'];
-  for (const k of need) {
-    if (!s[k]) {
-      const msg = document.getElementById('ship-msg');
-      msg.className = "alert alert-danger mt-3";
-      msg.textContent = "{{ 'Заполните обязательные поля' if lang=='ru' else 'Please fill in required fields' }}";
-      msg.classList.remove("d-none");
-      return;
+  // простая валидация
+  const required = ['first_name','last_name','country','postcode','city','address1','email','phone'];
+  for (const k of required) {
+    if (!data[k]) {
+      if (showToast) {
+        box.className = "alert alert-danger";
+        box.textContent = (lang=='ru'?'Заполните обязательные поля':'Please fill in required fields');
+        box.classList.remove('d-none');
+      }
+      return false;
     }
   }
 
-  // Сохраним в сессию
-  await saveShipping();
+  // локально
+  localStorage.setItem('shipping', JSON.stringify(data));
 
-  // Сформируем текст письма (как чек): позиции, итого, способ оплаты, логин, адрес
-  const orderLines = [
-    {% for it in cart_items %}
-      "{{ (it['name_' + lang] if it.get('name_' + lang) else it.get('name','')) | replace('\"','\\\"') }} × {{ it.qty }} — {{ it.subtotal }} NOK",
-    {% endfor %}
-  ].filter(Boolean);
-
-  const totalText = document.getElementById('order-total')?.textContent || "{{ total }} NOK";
-  const username = "{{ session.get('username','-') }}";
-  const langCode = "{{ lang }}";
-  const payMethod = method.toUpperCase();
-
-  const bodyText =
-`Order ({{ 'checkout' if lang=='en' else 'оформление' }})
-User: ${username}
-Lang: ${langCode}
-Payment: ${payMethod}
-
-Items:
-- ${orderLines.join("\n- ")}
-
-Total: ${totalText}
-
-Shipping:
-${s.last_name} ${s.first_name}
-${s.addr1}
-${s.addr2 ? s.addr2 + '\\n' : ''}${s.zip} ${s.city}, ${s.country}
-Phone: ${s.phone}
-Email: ${s.email}
-Notes: ${s.carrier_notes || '-'}`;
-
-  // Отправляем через Formspree (владельцу формы придёт письмо)
   try {
-    const fd = new FormData();
-    fd.append("_subject", `New order — ${payMethod}`);
-    fd.append("message", bodyText);
-
-    await fetch(FS_ENDPOINT, {
+    await fetch(saveUrl, {
       method: "POST",
-      body: fd,
-      headers: { "Accept": "application/json" }
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
     });
-
-    // После успешной отправки — ведём на страницу конкретной оплаты
-    if (method === "vipps")      window.location = "{{ url_for('pay_vipps') }}";
-    else if (method === "revolut") window.location = "{{ url_for('pay_revolut') }}";
-    else                           window.location = "{{ url_for('pay_paypal') }}";
-
-  } catch (e) {
-    const msg = document.getElementById('pay-msg');
-    msg.className = "alert alert-danger mt-3";
-    msg.textContent = "{{ 'Ошибка при отправке письма. Попробуйте ещё раз.' if lang=='ru' else 'Failed to send email. Please try again.' }}";
-    msg.classList.remove("d-none");
+    if (showToast) {
+      box.className = "alert alert-success";
+      box.textContent = (lang=='ru'?'Адрес сохранён':'Address saved');
+      box.classList.remove('d-none');
+      setTimeout(()=> box.classList.add('d-none'), 1500);
+    }
+    return true;
+  } catch(e) {
+    if (showToast) {
+      box.className = "alert alert-warning";
+      box.textContent = (lang=='ru'?'Не удалось сохранить адрес':'Failed to save address');
+      box.classList.remove('d-none');
+    }
+    return false;
   }
 }
+
+async function goToReview() {
+  const ok = await saveShipping(false);
+  if (!ok) { saveShipping(true); return; }
+
+  // показать сводку
+  const data = collectShipping();
+  renderReviewBox(data);
+
+  document.getElementById('edit-step').classList.add('d-none');
+  document.getElementById('review-step').classList.remove('d-none');
+}
+
+function backToEdit() {
+  document.getElementById('review-step').classList.add('d-none');
+  document.getElementById('edit-step').classList.remove('d-none');
+}
+
+async function proceedPayment(method) {
+  const ok = await saveShipping(false);
+  if (!ok) { saveShipping(true); return; }
+  window.location.href = payUrls[method];
+}
+
+// Восстановление из session → в контекст уже подставляется сервером.
+// Дополнительно — из localStorage (если серверной нет)
+window.addEventListener('DOMContentLoaded', () => {
+  {% if session.get('shipping') %}
+    fillFormFrom({{ session.get('shipping')|tojson }});
+  {% else %}
+    const ls = localStorage.getItem('shipping');
+    if (ls) fillFormFrom(JSON.parse(ls));
+  {% endif %}
+});
+
+// На всякий случай, перед уходом сохраняем адрес
+window.addEventListener('beforeunload', ()=>{ saveShipping(false); });
 </script>
 {% endblock %}
