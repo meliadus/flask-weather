@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-4">{{ tr.checkout_title }}</h1>
+
+<!-- Корзина кратко -->
+{% if cart_items %}
+  <table class="table table-dark table-striped align-middle">
+    <thead>
+      <tr>
+        <th>{{ 'Item' if lang=='en' else 'Товар' }}</th>
+        <th class="text-end">{{ 'Price' if lang=='en' else 'Цена' }}</th>
+        <th class="text-end">{{ 'Qty' if lang=='en' else 'Кол-во' }}</th>
+        <th class="text-end">{{ 'Subtotal' if lang=='en' else 'Сумма' }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in cart_items %}
+      <tr>
+        <td>{{ it['name_'+lang] or it.name }}</td>
+        <td class="text-end">{{ it.price }} {{ CURRENCY if CURRENCY else 'NOK' }}</td>
+        <td class="text-end">{{ it.qty }}</td>
+        <td class="text-end">{{ it.subtotal }} {{ CURRENCY if CURRENCY else 'NOK' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <h4 class="text-end">{{ 'Total:' if lang=='en' else 'Итого:' }} {{ total }} {{ CURRENCY if CURRENCY else 'NOK' }}</h4>
+{% endif %}
+
+<hr class="my-4">
+
+<!-- Адрес доставки -->
+<h3 class="mb-3">{{ tr.shipping_title }}</h3>
+<form method="post" class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">{{ tr.firstname }}</label>
+    <input name="firstname" class="form-control" required>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">{{ tr.lastname }}</label>
+    <input name="lastname" class="form-control" required>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">{{ tr.email }}</label>
+    <input name="email" type="email" class="form-control" required>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">{{ tr.phone }}</label>
+    <input name="phone" class="form-control" required>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">{{ tr.country }}</label>
+    <input name="country" class="form-control" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ tr.city }}</label>
+    <input name="city" class="form-control" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">{{ tr.zip }}</label>
+    <input name="zip" class="form-control" required>
+  </div>
+
+  <div class="col-12">
+    <label class="form-label">{{ tr.address1 }}</label>
+    <input name="address1" class="form-control" required>
+  </div>
+  <div class="col-12">
+    <label class="form-label">{{ tr.address2 }}</label>
+    <input name="address2" class="form-control">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">{{ tr.carrier }}</label>
+    <input name="carrier" class="form-control">
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">{{ tr.customer_note }}</label>
+    <input name="customer_note" class="form-control">
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-primary">{{ tr.review_and_pay }}</button>
+  </div>
+</form>
+
+<!-- Блок оплаты показываем ТОЛЬКО если адрес сохранён -->
+{% if ready_to_pay %}
+  <hr class="my-4">
+  <h4 class="mb-3">{{ tr.pay_with }}</h4>
+<!-- Блок оплаты -->
+  <a href="{{ url_for('pay_vipps') }}" class="btn btn-warning me-2">Vipps</a>
+  <a href="{{ url_for('pay_revolut') }}" class="btn btn-primary me-2">Revolut</a>
+  <a href="{{ url_for('pay_paypal') }}" class="btn btn-light">PayPal</a>
+
+{% endif %}
+{% endblock %}

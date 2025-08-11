@@ -1,45 +1,225 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="text-center mb-4">{{ 'Checkout' if lang=='en' else 'Оформление заказа' }}</h1>
+<h1 class="mb-4">{{ 'Checkout' if lang=='en' else 'Оформление заказа' }}</h1>
 
-{% if cart_items %}
-<table class="table table-dark table-striped align-middle">
-  <thead>
-    <tr>
-      <th>{{ 'Product' if lang=='en' else 'Товар' }}</th>
-      <th class="text-center">{{ 'Qty' if lang=='en' else 'Кол-во' }}</th>
-      <th class="text-end">{{ 'Price' if lang=='en' else 'Цена' }}</th>
-      <th class="text-end">{{ 'Subtotal' if lang=='en' else 'Сумма' }}</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in cart_items %}
-    <tr>
-      <td>{{ item['name_' + lang] }}</td>
-      <td class="text-center">{{ item.qty }}</td>
-      <td class="text-end">{{ item.price }} NOK</td>
-      <td class="text-end">{{ item.subtotal }} NOK</td>
-    </tr>
+<div class="row g-4">
+  <!-- Адрес доставки -->
+  <div class="col-lg-6">
+    <div class="card bg-dark text-light">
+      <div class="card-body">
+        <h5 class="card-title">{{ 'Shipping address' if lang=='en' else 'Адрес доставки' }}</h5>
+
+        <form id="shipping-form" onsubmit="return false;">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ 'First name' if lang=='en' else 'Имя' }}</label>
+              <input class="form-control" id="first_name" value="{{ shipping.first_name or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Last name' if lang=='en' else 'Фамилия' }}</label>
+              <input class="form-control" id="last_name" value="{{ shipping.last_name or '' }}">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Country' if lang=='en' else 'Страна' }}</label>
+              <input class="form-control" id="country" value="{{ shipping.country or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ 'ZIP/Postal code' if lang=='en' else 'Почтовый индекс' }}</label>
+              <input class="form-control" id="zip" value="{{ shipping.zip or '' }}">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">{{ 'City' if lang=='en' else 'Город' }}</label>
+              <input class="form-control" id="city" value="{{ shipping.city or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Carrier notes' if lang=='en' else 'Примечания для перевозчика' }}</label>
+              <input class="form-control" id="carrier_notes" value="{{ shipping.carrier_notes or '' }}" placeholder="{{ 'Entrance code, doorbell etc.' if lang=='en' else 'Код домофона, подъезд и т.п.' }}">
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">{{ 'Address line 1' if lang=='en' else 'Адрес, строка 1' }}</label>
+              <input class="form-control" id="addr1" value="{{ shipping.addr1 or '' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ 'Address line 2' if lang=='en' else 'Адрес, строка 2' }}</label>
+              <input class="form-control" id="addr2" value="{{ shipping.addr2 or '' }}">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" value="{{ shipping.email or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ 'Phone' if lang=='en' else 'Телефон' }}</label>
+              <input class="form-control" id="phone" value="{{ shipping.phone or '' }}">
+            </div>
+          </div>
+        </form>
+
+        <div id="ship-msg" class="alert mt-3 d-none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Резюме заказа -->
+  <div class="col-lg-6">
+    <div class="card bg-dark text-light">
+      <div class="card-body">
+        <h5 class="card-title">{{ 'Order summary' if lang=='en' else 'Состав заказа' }}</h5>
+
+        {% if cart_items %}
+          <ul class="list-group list-group-flush">
+            {% for it in cart_items %}
+              <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+                <span>
+                  {{ it['name_' + lang] if it.get('name_' + lang) else it.get('name', '') }}
+                  × {{ it.qty }}
+                </span>
+                <span>{{ it.subtotal }} NOK</span>
+              </li>
+            {% endfor %}
+            <li class="list-group-item bg-dark text-light d-flex justify-content-between">
+              <strong>{{ 'Total' if lang=='en' else 'Итого' }}</strong>
+              <strong id="order-total">{{ total }} NOK</strong>
+            </li>
+          </ul>
+        {% else %}
+          <p class="mt-2">{{ 'Your cart is empty' if lang=='en' else 'Ваша корзина пуста' }}</p>
+        {% endif %}
+
+        <!-- Кнопки оплаты -->
+        <div class="mt-4 d-flex flex-wrap gap-2">
+          <button class="btn btn-warning" onclick="proceedPayment('vipps')">Vipps</button>
+          <button class="btn btn-primary" onclick="proceedPayment('revolut')">Revolut</button>
+          <button class="btn btn-light" onclick="proceedPayment('paypal')">PayPal</button>
+        </div>
+
+        <div id="pay-msg" class="alert mt-3 d-none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const FS_ENDPOINT = "https://formspree.io/f/xrblayrz"; // твой Formspree
+
+function collectShipping() {
+  return {
+    first_name: document.getElementById('first_name').value.trim(),
+    last_name:  document.getElementById('last_name').value.trim(),
+    country:    document.getElementById('country').value.trim(),
+    zip:        document.getElementById('zip').value.trim(),
+    city:       document.getElementById('city').value.trim(),
+    addr1:      document.getElementById('addr1').value.trim(),
+    addr2:      document.getElementById('addr2').value.trim(),
+    email:      document.getElementById('email').value.trim(),
+    phone:      document.getElementById('phone').value.trim(),
+    carrier_notes: document.getElementById('carrier_notes').value.trim()
+  };
+}
+
+// Живое сохранение адреса в сессию (и localStorage на всякий)
+function saveShipping() {
+  const data = collectShipping();
+  localStorage.setItem("shipping", JSON.stringify(data));
+  return fetch("{{ url_for('save_shipping') }}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
+
+// Авто-подгрузка из localStorage (на случай возврата на страницу)
+(function restoreShippingFromLocal() {
+  try {
+    const raw = localStorage.getItem("shipping");
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    for (const k in s) {
+      const el = document.getElementById(k);
+      if (el) el.value = s[k];
+    }
+  } catch(e){}
+})();
+
+// Сохранение при изменении любого поля
+document.getElementById('shipping-form')
+  .addEventListener('input', () => saveShipping());
+
+// Отправка письма через Formspree (как в контактах), после чего — редирект на оплату
+async function proceedPayment(method) {
+  // Валидация (минимум обязательных полей)
+  const s = collectShipping();
+  const need = ['first_name','last_name','country','zip','city','addr1','email','phone'];
+  for (const k of need) {
+    if (!s[k]) {
+      const msg = document.getElementById('ship-msg');
+      msg.className = "alert alert-danger mt-3";
+      msg.textContent = "{{ 'Заполните обязательные поля' if lang=='ru' else 'Please fill in required fields' }}";
+      msg.classList.remove("d-none");
+      return;
+    }
+  }
+
+  // Сохраним в сессию
+  await saveShipping();
+
+  // Сформируем текст письма (как чек): позиции, итого, способ оплаты, логин, адрес
+  const orderLines = [
+    {% for it in cart_items %}
+      "{{ (it['name_' + lang] if it.get('name_' + lang) else it.get('name','')) | replace('\"','\\\"') }} × {{ it.qty }} — {{ it.subtotal }} NOK",
     {% endfor %}
-    <tr>
-      <th colspan="3" class="text-end">{{ 'Total' if lang=='en' else 'Итого' }}</th>
-      <th class="text-end">{{ total }} NOK</th>
-    </tr>
-  </tbody>
-</table>
+  ].filter(Boolean);
 
-<h4 class="mt-4">{{ 'Choose payment method:' if lang=='en' else 'Выберите способ оплаты:' }}</h4>
-<div class="d-flex gap-2 mt-2">
-  <a class="btn btn-warning" href="{{ url_for('pay_vipps') }}">Vipps</a>
-  <a class="btn btn-primary" href="{{ url_for('pay_revolut') }}">Revolut</a>
-  <a class="btn btn-light" href="{{ url_for('pay_paypal') }}">PayPal</a>
-</div>
-{% else %}
-<div class="alert alert-info">
-  {{ 'Your cart is empty.' if lang=='en' else 'Ваша корзина пуста.' }}
-</div>
-<a href="/{{ 'ru/shop' if lang=='ru' else 'shop' }}" class="btn btn-outline-light">
-  {{ 'Go to shop' if lang=='en' else 'Перейти в магазин' }}
-</a>
-{% endif %}
+  const totalText = document.getElementById('order-total')?.textContent || "{{ total }} NOK";
+  const username = "{{ session.get('username','-') }}";
+  const langCode = "{{ lang }}";
+  const payMethod = method.toUpperCase();
+
+  const bodyText =
+`Order ({{ 'checkout' if lang=='en' else 'оформление' }})
+User: ${username}
+Lang: ${langCode}
+Payment: ${payMethod}
+
+Items:
+- ${orderLines.join("\n- ")}
+
+Total: ${totalText}
+
+Shipping:
+${s.last_name} ${s.first_name}
+${s.addr1}
+${s.addr2 ? s.addr2 + '\\n' : ''}${s.zip} ${s.city}, ${s.country}
+Phone: ${s.phone}
+Email: ${s.email}
+Notes: ${s.carrier_notes || '-'}`;
+
+  // Отправляем через Formspree (владельцу формы придёт письмо)
+  try {
+    const fd = new FormData();
+    fd.append("_subject", `New order — ${payMethod}`);
+    fd.append("message", bodyText);
+
+    await fetch(FS_ENDPOINT, {
+      method: "POST",
+      body: fd,
+      headers: { "Accept": "application/json" }
+    });
+
+    // После успешной отправки — ведём на страницу конкретной оплаты
+    if (method === "vipps")      window.location = "{{ url_for('pay_vipps') }}";
+    else if (method === "revolut") window.location = "{{ url_for('pay_revolut') }}";
+    else                           window.location = "{{ url_for('pay_paypal') }}";
+
+  } catch (e) {
+    const msg = document.getElementById('pay-msg');
+    msg.className = "alert alert-danger mt-3";
+    msg.textContent = "{{ 'Ошибка при отправке письма. Попробуйте ещё раз.' if lang=='ru' else 'Failed to send email. Please try again.' }}";
+    msg.classList.remove("d-none");
+  }
+}
+</script>
 {% endblock %}

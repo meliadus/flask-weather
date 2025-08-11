@@ -61,6 +61,33 @@ def init_db():
 
 init_db()
 
+# почта поля
+
+def migrate_orders_add_shipping():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    for col in [
+        ("ship_country", "TEXT"),
+        ("ship_zip", "TEXT"),
+        ("ship_city", "TEXT"),
+        ("ship_addr1", "TEXT"),
+        ("ship_addr2", "TEXT"),
+        ("ship_firstname", "TEXT"),
+        ("ship_lastname", "TEXT"),
+        ("ship_email", "TEXT"),
+        ("ship_phone", "TEXT"),
+        ("ship_carrier", "TEXT"),          # например, «Posten», «DHL» и т.д.
+        ("customer_note", "TEXT")          # комментарий покупателя
+    ]:
+        try:
+            c.execute(f"ALTER TABLE orders ADD COLUMN {col[0]} {col[1]}")
+        except sqlite3.OperationalError:
+            pass  # колонка уже есть
+    conn.commit()
+    conn.close()
+
+migrate_orders_add_shipping()
+
 
 # ==== Пример списка товаров ====
 
@@ -203,6 +230,23 @@ def status_label(lang, code):
 
 translations = {
     "en": {
+        "checkout_title": "Checkout",
+        "shipping_title": "Shipping address",
+        "country": "Country",
+        "zip": "ZIP/Postal code",
+        "city": "City",
+        "address1": "Address line 1",
+        "address2": "Address line 2 (optional)",
+        "firstname": "First name",
+        "lastname": "Last name",
+        "email": "Email",
+        "phone": "Phone",
+        "carrier": "Preferred carrier (optional)",
+        "customer_note": "Order note (optional)",
+        "review_and_pay": "Review & pay",
+        "validation_fill_required": "Please fill all required fields.",
+        "pay_with": "Choose payment method:",
+        "place_order": "Place order",
         "site_title": "Territory of smart solutions",
         "menu_home": "Home",
         "menu_shop": "Shop",
@@ -257,6 +301,23 @@ translations = {
         "please_login": "Please log in to continue."
     },
     "ru": {
+        "checkout_title": "Оформление заказа",
+        "shipping_title": "Адрес доставки",
+        "country": "Страна",
+        "zip": "Индекс",
+        "city": "Город",
+        "address1": "Адрес (строка 1)",
+        "address2": "Адрес (строка 2, необязательно)",
+        "firstname": "Имя",
+        "lastname": "Фамилия",
+        "email": "Эл. почта",
+        "phone": "Телефон",
+        "carrier": "Предпочтительный перевозчик (необязательно)",
+        "customer_note": "Комментарий к заказу (необязательно)",
+        "review_and_pay": "Проверить и оплатить",
+        "validation_fill_required": "Пожалуйста, заполните обязательные поля.",
+        "pay_with": "Выберите способ оплаты:",
+        "place_order": "Разместить заказ",
         "site_title": "Территория умных решений",
         "menu_home": "Главная",
         "menu_shop": "Магазин",
@@ -370,15 +431,23 @@ def inject_request():
     return dict(request=request)
 
 def render_lang(template, lang, **kwargs):
-    cart_count = len(session.get("cart", []))
+    cart_count = 0
+    cart = session.get("cart", {})
+    if isinstance(cart, dict):
+        cart_count = sum(cart.values())
+    elif isinstance(cart, list):
+        cart_count = len(cart)
+
     return render_template(
         template,
         lang=lang,
         tr=translations[lang],
         posts=posts,
         cart_count=cart_count,
+        shipping=session.get("shipping", {}),   # <── добавили
         **kwargs
     )
+
 
 
 
@@ -391,6 +460,24 @@ def index_en():
 def index_ru():
     return render_lang("index.html", "ru")
 
+
+@app.post("/save_shipping")
+def save_shipping():
+    data = request.get_json(silent=True) or {}
+    session["shipping"] = {
+        "country": data.get("country", "").strip(),
+        "zip": data.get("zip", "").strip(),
+        "city": data.get("city", "").strip(),
+        "addr1": data.get("addr1", "").strip(),
+        "addr2": data.get("addr2", "").strip(),
+        "first_name": data.get("first_name", "").strip(),
+        "last_name": data.get("last_name", "").strip(),
+        "email": data.get("email", "").strip(),
+        "phone": data.get("phone", "").strip(),
+        "carrier_notes": data.get("carrier_notes", "").strip(),
+    }
+    session.modified = True
+    return ("", 204)
 
 
 # Контакты
@@ -554,7 +641,11 @@ def summarize_items(items_json, lang):
 
 # ==== Оформление заказа ====
 
-@app.route("/checkout")
+def _validate_shipping(form):
+    required = ["country","zip","city","address1","firstname","lastname","email","phone"]
+    return all(form.get(k, "").strip() for k in required)
+
+@app.route("/checkout", methods=["GET","POST"])
 def checkout_en():
     if not session.get("user_id"):
         return redirect(url_for("login_en"))
@@ -562,9 +653,31 @@ def checkout_en():
     if isinstance(cart, list):
         cart = {}
     cart_items, total = build_cart_items(cart)
-    return render_lang("checkout.html", "en", cart_items=cart_items, total=total)
 
-@app.route("/ru/checkout")
+    if request.method == "POST":
+        if not _validate_shipping(request.form):
+            flash(translations["en"]["validation_fill_required"], "error")
+            return render_lang("checkout1.html", "en", cart_items=cart_items, total=total)
+        session["shipping"] = {
+            "country": request.form.get("country","").strip(),
+            "zip": request.form.get("zip","").strip(),
+            "city": request.form.get("city","").strip(),
+            "addr1": request.form.get("address1","").strip(),
+            "addr2": request.form.get("address2","").strip(),
+            "firstname": request.form.get("firstname","").strip(),
+            "lastname": request.form.get("lastname","").strip(),
+            "email": request.form.get("email","").strip(),
+            "phone": request.form.get("phone","").strip(),
+            "carrier": request.form.get("carrier","").strip(),
+            "note": request.form.get("customer_note","").strip(),
+        }
+        session.modified = True
+        # показываем блок оплаты
+        return render_lang("checkout1.html", "en", cart_items=cart_items, total=total, ready_to_pay=True)
+
+    return render_lang("checkout1.html", "en", cart_items=cart_items, total=total)
+
+@app.route("/ru/checkout", methods=["GET","POST"])
 def checkout_ru():
     if not session.get("user_id"):
         return redirect(url_for("login_ru"))
@@ -572,7 +685,29 @@ def checkout_ru():
     if isinstance(cart, list):
         cart = {}
     cart_items, total = build_cart_items(cart)
-    return render_lang("checkout.html", "ru", cart_items=cart_items, total=total)
+
+    if request.method == "POST":
+        if not _validate_shipping(request.form):
+            flash(translations["ru"]["validation_fill_required"], "error")
+            return render_lang("checkout1.html", "ru", cart_items=cart_items, total=total)
+        session["shipping"] = {
+            "country": request.form.get("country","").strip(),
+            "zip": request.form.get("zip","").strip(),
+            "city": request.form.get("city","").strip(),
+            "addr1": request.form.get("address1","").strip(),
+            "addr2": request.form.get("address2","").strip(),
+            "firstname": request.form.get("firstname","").strip(),
+            "lastname": request.form.get("lastname","").strip(),
+            "email": request.form.get("email","").strip(),
+            "phone": request.form.get("phone","").strip(),
+            "carrier": request.form.get("carrier","").strip(),
+            "note": request.form.get("customer_note","").strip(),
+        }
+        session.modified = True
+        return render_lang("checkout1.html", "ru", cart_items=cart_items, total=total, ready_to_pay=True)
+
+    return render_lang("checkout1.html", "ru", cart_items=cart_items, total=total)
+
 
 
 
@@ -589,6 +724,15 @@ def build_cart_items(cart_dict):
 
 @app.route("/pay/vipps")
 def pay_vipps():
+    if not session.get("shipping"):
+        flash(
+            translations["ru"]["validation_fill_required"]
+            if request.path.startswith("/ru")
+            else translations["en"]["validation_fill_required"],
+            "error"
+        )
+        return redirect(url_for("checkout_ru" if request.path.startswith("/ru") else "checkout_en"))
+
     if not session.get("user_id"):
         return redirect(url_for("login_en"))
 
@@ -644,29 +788,94 @@ def pay_paypal():
 def create_pending_order(payment_method):
     cart = session.get("cart", {})
     if isinstance(cart, list):
-        cart = {}  # миграция со старого формата
+        cart = {}
 
     items, total = build_cart_items(cart)
     if not items:
-        return None, None, None  # нечего платить
+        return None, None, None
 
+    shipping = session.get("shipping") or {}
     reference = f"ORD-{datetime.now():%Y%m%d%H%M%S}-{session.get('user_id','guest')}"
-    # сохраним в БД
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("""INSERT INTO orders (user_id, items, total, payment_method, status, date)
-                 VALUES (?, ?, ?, ?, ?, ?)""",
-              (session.get("user_id"),
-               json.dumps(items, ensure_ascii=False),
-               float(total),
-               payment_method,
-               "awaiting_payment",  # ← было "Ожидает оплаты"
-               datetime.now().isoformat(timespec="seconds")))
-
+    c.execute("""
+        INSERT INTO orders (
+            user_id, items, total, payment_method, status, date,
+            ship_country, ship_zip, ship_city, ship_addr1, ship_addr2,
+            ship_firstname, ship_lastname, ship_email, ship_phone,
+            ship_carrier, customer_note
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    """, (
+        session.get("user_id"),
+        json.dumps(items, ensure_ascii=False),
+        float(total),
+        payment_method,
+        "awaiting_payment",
+        datetime.now().isoformat(timespec="seconds"),
+        shipping.get("country"), shipping.get("zip"), shipping.get("city"),
+        shipping.get("addr1"), shipping.get("addr2"),
+        shipping.get("firstname"), shipping.get("lastname"),
+        shipping.get("email"), shipping.get("phone"),
+        shipping.get("carrier"), shipping.get("note")
+    ))
     conn.commit()
     order_id = c.lastrowid
     conn.close()
+
+    # письмо админу
+    try:
+        send_order_email(order_id, items, total, payment_method, shipping)
+    except Exception as e:
+        print("email error:", e)
+
     return order_id, total, reference
+
+# функция отправки письма о заказе
+
+def _items_text_for_email(items):
+    lines = []
+    for it in items:
+        # имя в письме делаем на русском и английском (или одно из)
+        name = it.get("name_ru") or it.get("name_en") or it.get("name")
+        qty = it.get("qty", 1)
+        price = it.get("price", 0)
+        lines.append(f"- {name} x {qty} = {price * qty} {CURRENCY}")
+    return "\n".join(lines)
+
+def send_order_email(order_id, items, total, payment_method, ship):
+    user_login = session.get("username", "unknown")
+    body = []
+    body.append(f"New order #{order_id}")
+    body.append(f"User login: {user_login}")
+    body.append(f"Payment method: {payment_method}")
+    body.append(f"Status: awaiting_payment")
+    body.append("")
+    body.append("Items:")
+    body.append(_items_text_for_email(items))
+    body.append("")
+    body.append(f"TOTAL: {total} {CURRENCY}")
+    body.append("")
+    body.append("Shipping address:")
+    body.append(f"{ship.get('firstname','')} {ship.get('lastname','')}")
+    body.append(f"{ship.get('addr1','')}")
+    if ship.get("addr2"): body.append(ship.get("addr2"))
+    body.append(f"{ship.get('zip','')} {ship.get('city','')}")
+    body.append(f"{ship.get('country','')}")
+    body.append(f"Phone: {ship.get('phone','')}")
+    body.append(f"Email: {ship.get('email','')}")
+    if ship.get("carrier"): body.append(f"Carrier: {ship.get('carrier')}")
+    if ship.get("note"):    body.append(f"Note: {ship.get('note')}")
+    body.append("")
+    body.append("— Auto email from your shop")
+
+    msg = Message(
+        subject=f"New order #{order_id}",
+        sender=app.config['MAIL_USERNAME'],
+        recipients=["s@sfoods.org"],   # сюда получаешь уведомление
+        body="\n".join(body)
+    )
+    mail.send(msg)
 
 
 def summarize_items(items_json):
